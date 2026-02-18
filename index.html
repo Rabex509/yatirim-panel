@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>YatırımAI — Akıllı Portföy Paneli</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --navy:#080d1a;--navy2:#0d1526;--navy3:#111e33;
+  --border:#1a2a45;--border2:#243552;
+  --gold:#c9a84c;--gold2:#e8c96a;
+  --green:#2fd98a;--red:#f04f6a;--blue:#4a90e2;
+  --text:#dce8ff;--muted:#5a7399;--card-bg:rgba(13,21,38,0.95);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--navy);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 100% 0%,rgba(201,168,76,0.07) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at 0% 100%,rgba(47,217,138,0.05) 0%,transparent 55%);
+}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--navy2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* HEADER */
+header{
+  position:sticky;top:0;z-index:200;
+  background:rgba(8,13,26,0.92);backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:66px;gap:16px;
+}
+.logo{font-size:20px;font-weight:800;letter-spacing:1px;background:linear-gradient(90deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.logo span{font-weight:400;-webkit-text-fill-color:var(--muted);font-size:13px;margin-left:6px}
+.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.api-strip{display:flex;align-items:center;gap:8px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:10px;padding:6px 12px}
+.api-strip label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;white-space:nowrap}
+.api-strip input{background:transparent;border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;width:200px}
+.api-strip input::placeholder{color:var(--muted)}
+.api-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s}
+.api-dot.active{background:var(--green);box-shadow:0 0 6px var(--green)}
+.balance-box{display:flex;align-items:center;gap:10px;background:var(--navy3);border:1px solid var(--border2);border-radius:12px;padding:8px 16px;transition:border-color .3s}
+.balance-box:focus-within{border-color:var(--gold)}
+.bal-label{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.bal-row{display:flex;align-items:center;gap:6px}
+.bal-sym{font-family:'JetBrains Mono',monospace;color:var(--gold);font-size:17px}
+input.bal-input{background:transparent;border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:500;width:130px;text-align:right}
+input.bal-input::placeholder{color:var(--muted)}
+input.monthly-input{background:var(--navy3);border:1px solid var(--border2);border-radius:10px;padding:7px 12px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;width:130px;transition:border-color .3s}
+input.monthly-input::placeholder{color:var(--muted)}
+input.monthly-input:focus{border-color:var(--blue)}
+
+/* LAYOUT */
+main{max-width:1300px;margin:0 auto;padding:28px 24px;display:grid;gap:22px}
+.sec-header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.sec-header h2{font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold)}
+.sec-header .line{flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent)}
+.sec-badge{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:20px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.2)}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+.stat-card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden;animation:fadeUp .5s ease both}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent)}
+.stat-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;color:var(--text)}
+.stat-val.green{color:var(--green)}.stat-val.gold{color:var(--gold2)}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+.panel{background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:24px;animation:fadeUp .5s ease both}
+
+/* PORTFOLIO */
+.add-asset-form{display:grid;grid-template-columns:1fr 90px 110px auto;gap:10px;margin-bottom:18px}
+@media(max-width:700px){.add-asset-form{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.field input{background:var(--navy);border:1px solid var(--border2);border-radius:10px;padding:9px 12px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border-color .3s;width:100%}
+.field input:focus{border-color:var(--gold)}
+.field input::placeholder{color:var(--muted)}
+.btn{border:none;border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;letter-spacing:.5px;transition:all .2s}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#080d1a;padding:9px 18px;align-self:flex-end}
+.btn-gold:hover{opacity:.85;transform:translateY(-1px)}.btn-gold:active{transform:scale(.97)}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--muted);padding:5px 10px;font-size:11px;transition:border-color .2s,color .2s}
+.btn-outline:hover{border-color:var(--red);color:var(--red)}
+.asset-table{width:100%;border-collapse:collapse}
+.asset-table th{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.asset-table td{padding:11px 12px;font-size:13px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace}
+.asset-table tr:last-child td{border-bottom:none}
+.asset-table tr:hover td{background:rgba(255,255,255,.02)}
+.asset-name{font-family:'Syne',sans-serif;font-weight:600;color:var(--text)}
+.empty-state{text-align:center;padding:30px;color:var(--muted);font-size:13px}
+
+/* TICKER */
+.ticker-bar{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.ticker-item{background:var(--navy);border:1px solid var(--border);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:12px}
+.ticker-sym{font-weight:700;color:var(--gold2)}.ticker-price{color:var(--text)}
+.ticker-change{font-size:11px}.ticker-change.pos{color:var(--green)}.ticker-change.neg{color:var(--red)}
+.ticker-loading{color:var(--muted);font-size:12px;padding:8px 0}
+
+/* ═══════════════════════════════
+   BAKİYEYE GÖRE TAVSİYE PANELİ
+═══════════════════════════════ */
+.advice-panel{background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:24px;animation:fadeUp .4s ease both}
+
+.advice-body{display:grid;grid-template-columns:310px 1fr;gap:24px;align-items:start}
+@media(max-width:900px){.advice-body{grid-template-columns:1fr}}
+
+/* Sol sütun: aylık ekleme kartı */
+.ma-card{background:var(--navy);border:1px solid var(--border2);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:18px}
+.ma-row{display:flex;flex-direction:column;gap:4px}
+.ma-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.ma-val{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:500;line-height:1.2}
+.ma-val.gold{color:var(--gold2)}.ma-val.green{color:var(--green)}.ma-val.blue{color:var(--blue)}.ma-val.red{color:var(--red)}
+.ma-sub{font-size:11px;color:var(--muted);line-height:1.55;margin-top:3px}
+
+.tier-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:4px 12px;border-radius:20px;width:fit-content;margin-top:4px}
+.tier-badge.starter{background:rgba(74,144,226,.12);color:var(--blue);border:1px solid rgba(74,144,226,.25)}
+.tier-badge.balanced{background:rgba(232,201,106,.12);color:var(--gold2);border:1px solid rgba(232,201,106,.25)}
+.tier-badge.growth{background:rgba(47,217,138,.12);color:var(--green);border:1px solid rgba(47,217,138,.25)}
+
+.dca-bar-wrap{margin-top:2px}
+.dca-bar-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:5px}
+.dca-bar-track{height:6px;background:var(--border);border-radius:6px;overflow:hidden}
+.dca-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .8s cubic-bezier(.4,0,.2,1)}
+
+.status-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;margin-top:4px;width:fit-content}
+.status-pill.ok{background:rgba(47,217,138,.1);color:var(--green);border:1px solid rgba(47,217,138,.25)}
+.status-pill.warn{background:rgba(240,79,106,.1);color:var(--red);border:1px solid rgba(240,79,106,.25)}
+.status-pill.info{background:rgba(74,144,226,.1);color:var(--blue);border:1px solid rgba(74,144,226,.25)}
+
+/* Sağ sütun: hisse+kripto kartları */
+.adv-section-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.adv-rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:12px}
+
+.adv-rec-card{background:var(--navy);border:1px solid var(--border2);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .25s,transform .2s}
+.adv-rec-card:hover{transform:translateY(-2px)}
+.adv-rec-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.adv-rec-card.hisse::before{background:linear-gradient(90deg,var(--gold),transparent)}
+.adv-rec-card.kripto::before{background:linear-gradient(90deg,var(--green),transparent)}
+.adv-rec-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.adv-rec-sym{font-size:18px;font-weight:800;letter-spacing:1px}
+.adv-rec-sym.h{color:var(--gold2)}.adv-rec-sym.k{color:var(--green)}
+.adv-rec-name{font-size:11px;font-weight:600;color:var(--text);margin-bottom:5px}
+.adv-rec-why{font-size:11px;color:var(--muted);line-height:1.6}
+
+/* risk pills */
+.risk-pill{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:20px}
+.r-low{background:rgba(47,217,138,.12);color:var(--green);border:1px solid rgba(47,217,138,.25)}
+.r-mid{background:rgba(232,201,106,.12);color:var(--gold2);border:1px solid rgba(232,201,106,.25)}
+.r-high{background:rgba(240,79,106,.12);color:var(--red);border:1px solid rgba(240,79,106,.25)}
+
+/* AI PANEL */
+.ai-btn{background:linear-gradient(135deg,#1a2a45,#0d1e38);border:1px solid var(--gold);color:var(--gold2);padding:12px 28px;border-radius:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:all .25s;display:flex;align-items:center;gap:10px;width:fit-content}
+.ai-btn:hover{background:rgba(201,168,76,.12);transform:translateY(-2px);box-shadow:0 8px 24px rgba(201,168,76,.12)}
+.ai-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.ai-btn .spin{display:none;animation:spin 1s linear infinite}
+.ai-btn.loading .spin{display:inline}.ai-btn.loading .icon{display:none}
+.ai-output{margin-top:18px}
+.ai-section{margin-bottom:22px}
+.ai-section-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ai-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.ai-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.ai-card{background:var(--navy);border:1px solid var(--border2);border-radius:14px;padding:18px;transition:border-color .3s,transform .2s}
+.ai-card:hover{transform:translateY(-2px)}
+.ai-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.ai-card-sym{font-size:22px;font-weight:800;letter-spacing:1px}
+.ai-card-sym.hisse{color:var(--gold2)}.ai-card-sym.kripto{color:var(--green)}
+.ai-card-name{font-size:13px;font-weight:600;margin-bottom:6px}
+.ai-card-desc{font-size:11px;color:var(--muted);line-height:1.65;margin-bottom:10px}
+.ai-card-why-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.ai-card-why{font-size:12px;color:#a0b8d8;line-height:1.6}
+.ai-dist-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.ai-dist-item{background:var(--navy);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.ai-dist-cat{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.ai-dist-pct{font-family:'JetBrains Mono',monospace;font-size:28px;color:var(--text);line-height:1}
+.ai-dist-pct span{font-size:14px;color:var(--muted)}
+.ai-dist-amt{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold);margin-top:4px}
+.ai-dist-bar{height:3px;background:var(--border);border-radius:3px;margin-top:10px;overflow:hidden}
+.ai-dist-bar-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.ai-risk-box{background:var(--navy);border:1px solid var(--border2);border-radius:14px;padding:18px 22px;font-size:14px;color:#a0b8d8;line-height:1.8}
+.ai-risk-box strong{color:var(--text)}
+.ai-placeholder{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;border:1px dashed var(--border2);border-radius:14px;margin-top:10px}
+.ai-placeholder .big{font-size:36px;margin-bottom:10px}
+.loading-text{animation:pulse 1.5s ease infinite;color:var(--muted);font-size:13px;margin-top:8px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+#toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--navy3);border:1px solid var(--border2);border-radius:12px;padding:12px 20px;font-size:13px;color:var(--text);transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);max-width:320px}
+#toast.show{transform:translateY(0);opacity:1}
+
+@media(max-width:768px){
+  header{flex-wrap:wrap;height:auto;padding:12px 16px;gap:10px}
+  .logo span{display:none}.api-strip input{width:130px}
+  main{padding:16px 12px}.add-asset-form{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">YatırımAI <span>Akıllı Portföy Paneli</span></div>
+  <div class="header-right">
+    <div class="api-strip">
+      <div class="api-dot" id="apiDot"></div>
+      <label>OpenAI Anahtar</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-..." oninput="saveApiKey(this.value)"/>
+    </div>
+    <div class="balance-box">
+      <div>
+        <div class="bal-label">Toplam Bakiye</div>
+        <div class="bal-row">
+          <span class="bal-sym">₺</span>
+          <input class="bal-input" type="number" id="bakiyeInput" placeholder="100000" step="1000" oninput="saveBakiye()"/>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Aylık Ekleme</span>
+      <input class="monthly-input" type="number" id="aylikInput" placeholder="₺ 2000" step="500" oninput="saveAylik()"/>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- STAT ROW -->
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-label">Toplam Bakiye</div><div class="stat-val gold" id="st-bakiye">—</div><div class="stat-sub">Manuel giriş</div></div>
+    <div class="stat-card"><div class="stat-label">Portföy Değeri</div><div class="stat-val" id="st-portfolio">₺0</div><div class="stat-sub">Varlıklarınızdan</div></div>
+    <div class="stat-card"><div class="stat-label">Aylık Ekleme</div><div class="stat-val green" id="st-aylik">—</div><div class="stat-sub">Planlanan katkı</div></div>
+    <div class="stat-card"><div class="stat-label">Varlık Sayısı</div><div class="stat-val" id="st-varlik">0</div><div class="stat-sub">Portföyde</div></div>
+  </div>
+
+  <!-- ══ BAKİYEYE GÖRE TAVSİYE PANELİ ══ -->
+  <div class="advice-panel" id="advicePanel" style="display:none">
+    <div class="sec-header">
+      <h2>💡 Bakiyeye Göre Tavsiyeler</h2>
+      <div class="line"></div>
+      <span class="sec-badge" id="adviceBadge">—</span>
+    </div>
+    <div class="advice-body">
+      <div class="ma-card" id="adviceLeft"></div>
+      <div id="adviceRight" style="display:flex;flex-direction:column;gap:18px"></div>
+    </div>
+  </div>
+
+  <!-- TWO COL -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="sec-header"><h2>📁 Portföy Girişi</h2><div class="line"></div></div>
+      <div class="add-asset-form">
+        <div class="field"><label>Varlık Adı / Ticker</label><input type="text" id="assetName" placeholder="ör: BIMAS, SOL"/></div>
+        <div class="field"><label>Adet</label><input type="number" id="assetQty" placeholder="10" step="any"/></div>
+        <div class="field"><label>Alış Fiyatı (₺)</label><input type="number" id="assetPrice" placeholder="125.50" step="any"/></div>
+        <div class="field" style="justify-content:flex-end"><button class="btn btn-gold" onclick="addAsset()">+ Ekle</button></div>
+      </div>
+      <div id="assetTableWrap"><div class="empty-state">Henüz varlık eklenmedi. Yukarıdan ekleyin.</div></div>
+    </div>
+    <div class="panel">
+      <div class="sec-header"><h2>🔴 Canlı Kripto</h2><div class="line"></div><div class="sec-badge" id="tickerBadge">Yükleniyor</div></div>
+      <div id="tickerWrap"><div class="ticker-loading">CoinGecko'dan fiyatlar çekiliyor...</div></div>
+      <div style="margin-top:14px;font-size:11px;color:var(--muted)">↻ Her 60 saniyede güncellenir · Kaynak: CoinGecko (ücretsiz)</div>
+    </div>
+  </div>
+
+  <!-- AI PANELİ -->
+  <div class="panel">
+    <div class="sec-header"><h2>🤖 AI Yatırım Analizi</h2><div class="line"></div><div class="sec-badge">GPT-4o</div></div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <button class="ai-btn" id="aiBtn" onclick="runAiAnalysis()">
+        <span class="icon">✦</span><span class="spin">⟳</span> AI Analizi Başlat
+      </button>
+      <span style="font-size:12px;color:var(--muted)">Bakiye + aylık ekleme + portföyünüz AI'ya gönderilir</span>
+    </div>
+    <div id="aiOutput">
+      <div class="ai-placeholder">
+        <div class="big">✦</div>
+        Sağ üstten OpenAI API anahtarınızı girin,<br>ardından "AI Analizi Başlat"a tıklayın.<br>
+        <span style="font-size:11px;color:var(--muted);margin-top:6px;display:block">API anahtarı yalnızca tarayıcınızda saklanır.</span>
+      </div>
+    </div>
+  </div>
+
+</main>
+<div id="toast"></div>
+
+<script>
+/* ── STORAGE ── */
+const KEYS={bakiye:'yai_bakiye',aylik:'yai_aylik',assets:'yai_assets',apiKey:'yai_apikey'};
+function ls(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+
+/* ── INIT ── */
+window.addEventListener('DOMContentLoaded',()=>{
+  loadAll();
+  fetchCryptoPrices();
+  setInterval(fetchCryptoPrices,60000);
+});
+
+function loadAll(){
+  const b=ls(KEYS.bakiye); if(b) document.getElementById('bakiyeInput').value=b;
+  const a=ls(KEYS.aylik);  if(a) document.getElementById('aylikInput').value=a;
+  const k=ls(KEYS.apiKey); if(k){document.getElementById('apiKeyInput').value=k;setApiDot(true);}
+  updateStats(); renderAssetTable();
+  const bakiye=parseFloat(b)||0;
+  if(bakiye>0){
+    renderAdvicePanel(bakiye);
+    if(!k||k.length<10) showFallback(bakiye,'no-key');
+  }
+}
+
+/* ── SAVE ── */
+function saveBakiye(){
+  lsSet(KEYS.bakiye,document.getElementById('bakiyeInput').value);
+  updateStats();
+  const b=parseFloat(document.getElementById('bakiyeInput').value)||0;
+  if(b>0){
+    renderAdvicePanel(b);
+    const k=ls(KEYS.apiKey);
+    if(!k||k.length<10) showFallback(b,'no-key');
+  } else {
+    document.getElementById('advicePanel').style.display='none';
+  }
+}
+function saveAylik(){
+  lsSet(KEYS.aylik,document.getElementById('aylikInput').value);
+  updateStats();
+  // Refresh advice panel so DCA bar updates
+  const b=parseFloat(document.getElementById('bakiyeInput').value)||0;
+  if(b>0) renderAdvicePanel(b);
+}
+function saveApiKey(v){lsSet(KEYS.apiKey,v);setApiDot(v.length>10);}
+function setApiDot(on){document.getElementById('apiDot').classList.toggle('active',on);}
+
+/* ── STATS ── */
+function updateStats(){
+  const b=parseFloat(document.getElementById('bakiyeInput').value)||0;
+  const a=parseFloat(document.getElementById('aylikInput').value)||0;
+  const assets=getAssets();
+  document.getElementById('st-bakiye').textContent=b?fmt(b):'—';
+  document.getElementById('st-aylik').textContent=a?fmt(a):'—';
+  document.getElementById('st-varlik').textContent=assets.length;
+  document.getElementById('st-portfolio').textContent=fmt(assets.reduce((s,x)=>s+(x.qty*x.price),0));
+}
+const fmt=n=>new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY',maximumFractionDigits:0}).format(n);
+const fmtN=n=>new Intl.NumberFormat('tr-TR',{maximumFractionDigits:2}).format(n);
+
+/* ── ASSETS ── */
+function getAssets(){try{return JSON.parse(ls(KEYS.assets)||'[]')}catch(e){return[]}}
+function saveAssets(arr){lsSet(KEYS.assets,JSON.stringify(arr));}
+function addAsset(){
+  const name=document.getElementById('assetName').value.trim().toUpperCase();
+  const qty=parseFloat(document.getElementById('assetQty').value);
+  const price=parseFloat(document.getElementById('assetPrice').value);
+  if(!name||!qty||!price){showToast('⚠️ Lütfen tüm alanları doldurun.');return;}
+  const assets=getAssets();
+  assets.push({id:Date.now(),name,qty,price});
+  saveAssets(assets);
+  document.getElementById('assetName').value='';
+  document.getElementById('assetQty').value='';
+  document.getElementById('assetPrice').value='';
+  renderAssetTable();updateStats();
+  showToast('✅ '+name+' portföye eklendi.');
+}
+function removeAsset(id){saveAssets(getAssets().filter(x=>x.id!==id));renderAssetTable();updateStats();}
+function renderAssetTable(){
+  const assets=getAssets();
+  const wrap=document.getElementById('assetTableWrap');
+  if(!assets.length){wrap.innerHTML='<div class="empty-state">Henüz varlık eklenmedi.</div>';return;}
+  const total=assets.reduce((s,x)=>s+(x.qty*x.price),0);
+  const rows=assets.map(a=>{
+    const cost=a.qty*a.price;const pct=total>0?((cost/total)*100).toFixed(1):0;
+    return`<tr><td><span class="asset-name">${a.name}</span></td><td>${fmtN(a.qty)}</td><td>${fmtN(a.price)} ₺</td><td>${fmt(cost)}</td><td>${pct}%</td><td><button class="btn btn-outline" onclick="removeAsset(${a.id})">✕</button></td></tr>`;
+  }).join('');
+  wrap.innerHTML=`<table class="asset-table"><thead><tr><th>Varlık</th><th>Adet</th><th>Alış</th><th>Değer</th><th>Ağırlık</th><th></th></tr></thead><tbody>${rows}</tbody></table><div style="margin-top:12px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold2)">Toplam: ${fmt(total)}</div>`;
+}
+
+/* ── CRYPTO TICKER ── */
+const TRACKED=['solana','avalanche-2','chainlink','polkadot','cosmos','near','injective-protocol','sei-network'];
+const SYMS={'solana':'SOL','avalanche-2':'AVAX','chainlink':'LINK','polkadot':'DOT','cosmos':'ATOM','near':'NEAR','injective-protocol':'INJ','sei-network':'SEI'};
+async function fetchCryptoPrices(){
+  const wrap=document.getElementById('tickerWrap');
+  const badge=document.getElementById('tickerBadge');
+  try{
+    const res=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${TRACKED.join(',')}&vs_currencies=try&include_24hr_change=true`);
+    if(!res.ok)throw new Error('API hatası');
+    const data=await res.json();
+    let html='<div class="ticker-bar">';
+    for(const id of TRACKED){
+      const d=data[id];if(!d)continue;
+      const sym=SYMS[id]||id;
+      const price=d.try?fmtN(d.try)+' ₺':'—';
+      const chg=d.try_24h_change;
+      const chgTxt=chg!=null?(chg>=0?'+':'')+chg.toFixed(2)+'%':'';
+      const chgCls=chg>=0?'pos':'neg';
+      html+=`<div class="ticker-item"><span class="ticker-sym">${sym}</span><span class="ticker-price">${price}</span>${chgTxt?`<span class="ticker-change ${chgCls}">${chgTxt}</span>`:''}</div>`;
+    }
+    wrap.innerHTML=html+'</div>';
+    badge.textContent='Canlı';badge.style.color='var(--green)';badge.style.borderColor='rgba(47,217,138,.3)';badge.style.background='rgba(47,217,138,.08)';
+  }catch(err){
+    wrap.innerHTML=`<div class="ticker-loading">⚠️ ${err.message}</div>`;badge.textContent='Hata';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   BAKİYEYE GÖRE TAVSİYE PANELİ — VERİ
+═══════════════════════════════════════════ */
+const ADVICE_DATA={
+  starter:{
+    label:'Başlangıç Planı', tierClass:'starter',
+    oranMin:15, oranMax:20,
+    dcaHedef:'Aylık bakiyenin %15–20\'sini düzenli ekleyin.',
+    dcaNot:'Bu seviyede DCA (düzenli ekleme) en güçlü büyüme aracınızdır. Küçük miktarları düzenli yatırmanız, piyasa dalgalanmalarından korunmanızı sağlar.',
+    hisseler:[
+      {sembol:'BIMAS',isim:'BİM Birleşik Mağazalar',neden:'Savunmacı hisse; enflasyonda talep düşmez. İstikrarlı temettü geliri sağlar.',risk:'Düşük'},
+      {sembol:'EREGL',isim:'Ereğli Demir ve Çelik',neden:'Dolar bazlı ihracat geliriyle kur riskine karşı doğal koruma sunar.',risk:'Orta'},
+    ],
+    altcoinler:[
+      {sembol:'LINK',isim:'Chainlink',neden:'DeFi sektörünün altyapı standardı. Spekülatif değil, gerçek kullanım alanı olan proje.',risk:'Orta'},
+      {sembol:'INJ', isim:'Injective Protocol',neden:'Finans odaklı L1 zinciri. Aktif ekosistemi ve artan kurumsal ilgisiyle öne çıkıyor.',risk:'Yüksek'},
+    ],
+  },
+  balanced:{
+    label:'Dengeli Plan', tierClass:'balanced',
+    oranMin:10, oranMax:15,
+    dcaHedef:'Aylık bakiyenin %10–15\'ini hisse ve altcoin arasında paylaştırın.',
+    dcaNot:'Bu bakiye seviyesinde aylık katkıyı farklı varlık sınıflarına dağıtmak riski azaltır. Düşüş dönemlerinde ek alım yapma fırsatını değerlendirin.',
+    hisseler:[
+      {sembol:'THYAO',isim:'Türk Hava Yolları',neden:'Uluslararası döviz geliriyle kur koruması. Turizm büyümesinden direkt faydalanır.',risk:'Orta'},
+      {sembol:'BIMAS',isim:'BİM Birleşik Mağazalar',neden:'Portföye istikrar katar. Savunmacı yapısı piyasa düşüşlerinde koruma sağlar.',risk:'Düşük'},
+      {sembol:'EREGL',isim:'Ereğli Demir ve Çelik',neden:'İhracat gücü, temettü geçmişi ve altyapı talebinden fayda sağlar.',risk:'Orta'},
+    ],
+    altcoinler:[
+      {sembol:'SOL', isim:'Solana',neden:'Hız ve düşük maliyet avantajıyla Ethereum\'a güçlü rakip. Geliştirici büyümesi sürekli yüksek.',risk:'Yüksek'},
+      {sembol:'LINK',isim:'Chainlink',neden:'Kurumsal entegrasyonlar artıyor; oracle standardı haline geldi.',risk:'Orta'},
+      {sembol:'INJ', isim:'Injective Protocol',neden:'DeFi ve türev piyasası odaklı niş L1 projesi. Aktif geliştirici topluluğu var.',risk:'Yüksek'},
+    ],
+  },
+  growth:{
+    label:'Büyüme Planı', tierClass:'growth',
+    oranMin:7, oranMax:12,
+    dcaHedef:'Aylık bakiyenin %7–12\'sini çeşitlendirilmiş şekilde ekleyin.',
+    dcaNot:'Büyük bakiyelerde aylık katkının portföy içindeki ağırlığı azalır. Varlık seçimi ve çeşitlendirme daha kritik hale gelir. Tek varlığa %15\'ten fazla koymayın.',
+    hisseler:[
+      {sembol:'THYAO',isim:'Türk Hava Yolları',neden:'Global büyüme stratejisi ve güçlü döviz gelir yapısı.',risk:'Orta'},
+      {sembol:'EREGL',isim:'Ereğli Demir ve Çelik',neden:'Altyapı projelerinden sistematik fayda. Kur korumalı ihracat geliri.',risk:'Orta'},
+      {sembol:'SASA', isim:'SASA Polyester',neden:'Hızlı kapasite artışı, döviz bazlı gelir ve sektörde lider konum.',risk:'Yüksek'},
+    ],
+    altcoinler:[
+      {sembol:'SOL', isim:'Solana',neden:'Bu bakiye için piyasa likiditesi yeterli. Güçlü ekosistem ve kurumsal ilgi artıyor.',risk:'Yüksek'},
+      {sembol:'AVAX',isim:'Avalanche',neden:'Subnet mimarisiyle kurumsal benimsemede güçlü. Özel blok zinciri ortaklıkları artıyor.',risk:'Yüksek'},
+      {sembol:'INJ', isim:'Injective Protocol',neden:'DeFi hacminin ve ekosistem büyümesinin doğrudan faydalananı.',risk:'Yüksek'},
+    ],
+  },
+};
+
+function getTier(b){return b<50000?ADVICE_DATA.starter:b<250000?ADVICE_DATA.balanced:ADVICE_DATA.growth;}
+
+function renderAdvicePanel(bakiye){
+  const tier=getTier(bakiye);
+  const panel=document.getElementById('advicePanel');
+  panel.style.display='block';
+
+  // Badge
+  const badge=document.getElementById('adviceBadge');
+  badge.textContent=tier.label;
+
+  // ── Sol: Aylık ekleme tavsiyesi ──
+  const aylikGirilen=parseFloat(document.getElementById('aylikInput').value)||0;
+  const aylikMin=Math.round(bakiye*tier.oranMin/100/500)*500;
+  const aylikMax=Math.round(bakiye*tier.oranMax/100/500)*500;
+  const idealPct=Math.round((tier.oranMin+tier.oranMax)/2);
+  const girilenPct=aylikGirilen>0?Math.min(105,Math.round((aylikGirilen/bakiye)*100)):0;
+
+  let statusHtml='';
+  if(aylikGirilen===0){
+    statusHtml='<span class="status-pill info">ℹ Henüz girilmedi</span>';
+  } else if(girilenPct<tier.oranMin){
+    statusHtml=`<span class="status-pill warn">↓ Önerilenden düşük (${girilenPct}%)</span>`;
+  } else {
+    statusHtml=`<span class="status-pill ok">✓ İdeal aralıkta (${girilenPct}%)</span>`;
+  }
+
+  document.getElementById('adviceLeft').innerHTML=`
+    <div class="ma-row">
+      <div class="ma-lbl">Portföy Seviyesi</div>
+      <span class="tier-badge ${tier.tierClass}">${tier.label}</span>
+    </div>
+    <div class="ma-row">
+      <div class="ma-lbl">Önerilen Aylık Ekleme</div>
+      <div class="ma-val gold">${fmt(aylikMin)}</div>
+      <div class="ma-sub">ile ${fmt(aylikMax)} arasında &nbsp;·&nbsp; Bakiyenizin %${tier.oranMin}–${tier.oranMax}'i</div>
+    </div>
+    ${aylikGirilen>0?`
+    <div class="ma-row">
+      <div class="ma-lbl">Girdiğiniz Tutar</div>
+      <div class="ma-val ${girilenPct>=tier.oranMin?'green':'red'}">${fmt(aylikGirilen)}</div>
+      ${statusHtml}
+    </div>
+    <div class="dca-bar-wrap">
+      <div class="dca-bar-labels"><span>%0</span><span style="color:var(--gold)">Hedef %${idealPct}</span><span>%${tier.oranMax+5}+</span></div>
+      <div class="dca-bar-track"><div class="dca-bar-fill" id="dcaBar" style="width:0%"></div></div>
+    </div>`:
+    `<div class="ma-row"><div class="ma-sub" style="font-size:12px;color:var(--text)">${tier.dcaHedef}</div></div>`}
+    <div class="ma-row">
+      <div class="ma-lbl">DCA Stratejisi</div>
+      <div class="ma-sub" style="color:#a0b8d8;font-size:12px">${tier.dcaNot}</div>
+    </div>`;
+
+  // Animate DCA bar after render
+  if(aylikGirilen>0){
+    requestAnimationFrame(()=>{
+      const bar=document.getElementById('dcaBar');
+      if(bar) bar.style.width=Math.min(100,girilenPct)+'%';
+    });
+  }
+
+  // ── Sağ: Hisse + Kripto önerileri ──
+  const riskClass=r=>r==='Düşük'?'r-low':r==='Orta'?'r-mid':'r-high';
+
+  const hisseCards=tier.hisseler.map(h=>`
+    <div class="adv-rec-card hisse">
+      <div class="adv-rec-top"><span class="adv-rec-sym h">${h.sembol}</span><span class="risk-pill ${riskClass(h.risk)}">${h.risk}</span></div>
+      <div class="adv-rec-name">${h.isim}</div>
+      <div class="adv-rec-why">${h.neden}</div>
+    </div>`).join('');
+
+  const altCards=tier.altcoinler.map(c=>`
+    <div class="adv-rec-card kripto">
+      <div class="adv-rec-top"><span class="adv-rec-sym k">${c.sembol}</span><span class="risk-pill ${riskClass(c.risk)}">${c.risk}</span></div>
+      <div class="adv-rec-name">${c.isim}</div>
+      <div class="adv-rec-why">${c.neden}</div>
+    </div>`).join('');
+
+  document.getElementById('adviceRight').innerHTML=`
+    <div>
+      <div class="adv-section-title">🏦 Önerilen Hisseler</div>
+      <div class="adv-rec-grid">${hisseCards}</div>
+    </div>
+    <div>
+      <div class="adv-section-title">🪙 Önerilen Altcoinler</div>
+      <div class="adv-rec-grid">${altCards}</div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.6">
+      ⚠️ Bu öneriler yalnızca bilgilendirme amaçlıdır. Yatırım kararlarınızı lisanslı bir finansal danışmana danışarak verin.
+    </div>`;
+}
+
+/* ── FALLBACK VERİ (AI yokken) ── */
+const FB={
+  s:{l:'Başlangıç',h:[{sembol:'BIMAS',isim:'BİM Birleşik Mağazalar',aciklama:'Türkiye\'nin lider indirimli market zinciri.',neden:'Savunmacı; enflasyonda talep düşmez.',risk:'Düşük'},{sembol:'EREGL',isim:'Ereğli Demir ve Çelik',aciklama:'Türkiye\'nin en büyük çelik üreticisi.',neden:'Dolar bazlı gelir; kur koruması.',risk:'Orta'}],a:[{sembol:'LINK',isim:'Chainlink',aciklama:'Blok zinciri oracle altyapısı.',neden:'Sektör standardı; gerçek kullanım alanı.',risk:'Orta'},{sembol:'INJ',isim:'Injective Protocol',aciklama:'DeFi odaklı L1.',neden:'Finans uygulamalarına odaklı niş proje.',risk:'Yüksek'}],d:[{kategori:'Hisse Senedi',yuzde:50},{kategori:'Altcoin',yuzde:30},{kategori:'Nakit/Fon',yuzde:20}],r:'Küçük bakiyelerde savunmacı strateji ve düzenli DCA önerilir.'},
+  m:{l:'Dengeli',h:[{sembol:'THYAO',isim:'Türk Hava Yolları',aciklama:'Küresel havayolu şirketi.',neden:'Döviz geliriyle kur koruması.',risk:'Orta'},{sembol:'BIMAS',isim:'BİM Birleşik Mağazalar',aciklama:'Lider indirimli market zinciri.',neden:'Savunmacı, istikrarlı temettü.',risk:'Düşük'},{sembol:'EREGL',isim:'Ereğli Demir ve Çelik',aciklama:'Çelik üreticisi.',neden:'İhracat gücü ve kur avantajı.',risk:'Orta'}],a:[{sembol:'SOL',isim:'Solana',aciklama:'Yüksek hızlı blok zinciri.',neden:'Güçlü geliştirici büyümesi.',risk:'Yüksek'},{sembol:'LINK',isim:'Chainlink',aciklama:'Oracle altyapısı.',neden:'Kurumsal entegrasyonlar artıyor.',risk:'Orta'},{sembol:'INJ',isim:'Injective Protocol',aciklama:'DeFi L1.',neden:'Aktif ekosistem.',risk:'Yüksek'}],d:[{kategori:'Hisse Senedi',yuzde:45},{kategori:'Altcoin',yuzde:35},{kategori:'Nakit/Fon',yuzde:20}],r:'Dengeli dağılım hem istikrar hem büyüme sağlar.'},
+  l:{l:'Büyüme',h:[{sembol:'THYAO',isim:'Türk Hava Yolları',aciklama:'Global havayolu.',neden:'Güçlü döviz geliri.',risk:'Orta'},{sembol:'EREGL',isim:'Ereğli Demir ve Çelik',aciklama:'Çelik üreticisi.',neden:'Kur korumalı gelir.',risk:'Orta'},{sembol:'SASA',isim:'SASA Polyester',aciklama:'Polyester üreticisi.',neden:'Hızlı büyüme ve döviz geliri.',risk:'Yüksek'}],a:[{sembol:'SOL',isim:'Solana',aciklama:'Yüksek hızlı L1.',neden:'Büyük bakiye için likidite yeterli.',risk:'Yüksek'},{sembol:'AVAX',isim:'Avalanche',aciklama:'Subnet platformu.',neden:'Kurumsal benimseme güçlü.',risk:'Yüksek'},{sembol:'INJ',isim:'Injective Protocol',aciklama:'DeFi L1.',neden:'Büyüyen DeFi hacminin faydalananı.',risk:'Yüksek'}],d:[{kategori:'Hisse Senedi',yuzde:40},{kategori:'Altcoin',yuzde:40},{kategori:'Nakit/Fon',yuzde:20}],r:'Büyük portföyde çeşitlendirme kritiktir. Tek varlığa %15\'ten fazla koymayın.'},
+};
+function getFB(b){return b<50000?FB.s:b<250000?FB.m:FB.l;}
+function showFallback(bakiye,reason){
+  const fb=getFB(bakiye);
+  renderAiOutput({hisseler:fb.h,altcoinler:fb.a,dagilim:fb.d,riskYorumu:fb.r},bakiye,{fallback:true,etiket:fb.l+' Planı',reason});
+}
+
+/* ── AI ANALİZ ── */
+async function runAiAnalysis(){
+  const apiKey=ls(KEYS.apiKey);
+  const bakiye=parseFloat(document.getElementById('bakiyeInput').value)||0;
+  if(bakiye===0){showToast('⚠️ Lütfen toplam bakiyenizi girin.');return;}
+  if(!apiKey||apiKey.length<10){showFallback(bakiye,'no-key');showToast('💡 API anahtarı yok — akıllı plan gösteriliyor.');return;}
+  const aylik=parseFloat(document.getElementById('aylikInput').value)||0;
+  const assets=getAssets();
+  const btn=document.getElementById('aiBtn');
+  btn.disabled=true;btn.classList.add('loading');
+  document.getElementById('aiOutput').innerHTML='<div class="loading-text">✦ AI analizi yapılıyor, lütfen bekleyin...</div>';
+  const pt=assets.length?assets.map(a=>`${a.name}: ${a.qty} adet, ${a.price}₺`).join('\n'):'Portföy boş.';
+  const prompt=`Sen profesyonel bir Türk yatırım analistisin.\nBakiye: ${bakiye.toLocaleString('tr-TR')} TL\nAylık ekleme: ${aylik.toLocaleString('tr-TR')} TL\nPortföy:\n${pt}\n\nKURALLAR: 1) Sadece hisse+altcoin öner. 2) Kripto için BTC/ETH ve CMC ilk 10 önerme. 3) Türkçe yanıt. 4) YALNIZCA JSON:\n{"hisseler":[{"sembol":"","isim":"","aciklama":"","neden":"","risk":"Düşük|Orta|Yüksek"}],"altcoinler":[{"sembol":"","isim":"","aciklama":"","neden":"","risk":"Orta|Yüksek"}],"dagilim":[{"kategori":"","yuzde":0}],"riskYorumu":""}`;
+  try{
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},body:JSON.stringify({model:'gpt-4o',messages:[{role:'user',content:prompt}],temperature:0.7,max_tokens:2000,response_format:{type:'json_object'}})});
+    if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'API hatası');}
+    const data=await res.json();
+    renderAiOutput(JSON.parse(data.choices[0].message.content),bakiye);
+    showToast('✅ AI analizi tamamlandı!');
+  }catch(err){
+    showFallback(bakiye,err.message);
+    showToast('⚠️ AI hatası — akıllı plan gösteriliyor.');
+  }finally{btn.disabled=false;btn.classList.remove('loading');}
+}
+
+function renderAiOutput(d,bakiye,opts){
+  opts=opts||{};
+  const rc=r=>r==='Düşük'?'r-low':r==='Orta'?'r-mid':'r-high';
+  const dc=['#c9a84c','#2fd98a','#4a90e2','#f04f6a','#a084e8'];
+  let banner='';
+  if(opts.fallback){
+    const noKey=opts.reason==='no-key';
+    banner=`<div style="display:flex;align-items:flex-start;gap:12px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:12px;padding:14px 18px;margin-bottom:22px">
+      <span style="font-size:20px">${noKey?'💡':'⚠️'}</span>
+      <div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--gold);text-transform:uppercase;margin-bottom:4px">${opts.etiket||'Akıllı Öneri Planı'}</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">${noKey?'API anahtarı girilmedi.':'AI bağlantısı kurulamadı.'} Bakiyenize göre <strong style="color:var(--gold2)">akıllı öneri planı</strong> gösteriliyor.</div>
+        ${noKey?'<div style="font-size:11px;color:var(--muted);margin-top:5px">API anahtarı ekleyip <strong style="color:var(--text)">AI Analizi Başlat</strong>\'a tıklarsanız kişiselleştirilmiş analiz alırsınız.</div>':''}
+      </div></div>`;
+  }
+  const hCards=(d.hisseler||[]).map(h=>`<div class="ai-card"><div class="ai-card-top"><span class="ai-card-sym hisse">${h.sembol}</span><span class="risk-pill ${rc(h.risk)}">${h.risk} Risk</span></div><div class="ai-card-name">${h.isim}</div><div class="ai-card-desc">${h.aciklama}</div><div class="ai-card-why-label">Neden önerilir?</div><div class="ai-card-why">${h.neden}</div></div>`).join('');
+  const aCards=(d.altcoinler||[]).map(c=>`<div class="ai-card"><div class="ai-card-top"><span class="ai-card-sym kripto">${c.sembol}</span><span class="risk-pill ${rc(c.risk)}">${c.risk} Risk</span></div><div class="ai-card-name">${c.isim}</div><div class="ai-card-desc">${c.aciklama}</div><div class="ai-card-why-label">Neden önerilir?</div><div class="ai-card-why">${c.neden}</div></div>`).join('');
+  const dItems=(d.dagilim||[]).map((item,i)=>{const t=bakiye*(item.yuzde/100);const col=dc[i%dc.length];return`<div class="ai-dist-item"><div class="ai-dist-cat">${item.kategori}</div><div class="ai-dist-pct">${item.yuzde}<span>%</span></div><div class="ai-dist-amt">${fmt(t)}</div><div class="ai-dist-bar"><div class="ai-dist-bar-fill" style="width:0%;background:${col}" data-w="${item.yuzde}"></div></div></div>`;}).join('');
+  document.getElementById('aiOutput').innerHTML=`<div class="ai-output">${banner}<div class="ai-section"><div class="ai-section-title">🏦 Hisse Önerileri</div><div class="ai-cards">${hCards||'<span style="color:var(--muted)">Öneri yok</span>'}</div></div><div class="ai-section"><div class="ai-section-title">🪙 Altcoin Önerileri</div><div class="ai-cards">${aCards||'<span style="color:var(--muted)">Öneri yok</span>'}</div></div><div class="ai-section"><div class="ai-section-title">📊 Portföy Dağılımı</div><div class="ai-dist-grid">${dItems}</div></div><div class="ai-section"><div class="ai-section-title">⚠️ Risk Yorumu</div><div class="ai-risk-box">${d.riskYorumu||'—'}</div></div><div style="margin-top:16px;font-size:11px;color:var(--muted);line-height:1.7">⚠️ <strong style="color:var(--gold)">Uyarı:</strong> Bu analiz bilgilendirme amaçlıdır ve yatırım tavsiyesi değildir.</div></div>`;
+  requestAnimationFrame(()=>{document.querySelectorAll('.ai-dist-bar-fill').forEach(b=>{b.style.width=b.dataset.w+'%';});});
+}
+
+/* ── TOAST ── */
+let tt;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),3500);}
+</script>
+</body>
+</html>
